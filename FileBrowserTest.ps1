@@ -1,4 +1,8 @@
 $wordToSearch = @("PASSPORT", "DEPENDENTS", "EFMP", "EXCEPTIONAL FAMILY MEMBER", "DEROS", "OUT OF CYCLE", "ATAAPS", "SOCIAL", "CARDS", "SPOUSE", "SIGNIFICANT OTHER", "DRIVERS LICENSE NUMBER", "OPR", "EPR", "SSN", "SSAN", "SOCIAL ROSTER", "RECALL ROSTER", "ALPHA ROSTER", "DOB", "DATE OF BIRTH", "BANK ROUTING NUMBER", "GAINS ROSTER", "LOSSES", "INSURANCE", "RATER", "RATEE", "UMPR", "REPORTS", "DD577", "AF910", "AF 910", "AF911", "AF 911", "AF912", "AF 912", "LEAVE", "AF707", "AF 707", "AF780", "AF 780", "ADDITIONAL DUTY", "TEST")
+$wordDocs = @()
+$excelDocs = @()
+$pdfDocs = @()
+$txtDocs = @()
 $out = @() 
 function Find-Folders {
     [Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
@@ -16,36 +20,50 @@ function Find-Folders {
         $loop = $false
 		$directory = $browse.SelectedPath
 		#Insert your script here
-                    Get-ChildItem  -Path $directory -Include "*.txt", "*.docx", "*.doc", "*.xlsx" -Recurse -ErrorAction SilentlyContinue -Force |`
-            ForEach-Object{
+          Get-ChildItem  -Path $directory -Include "*.txt", "*.docx", "*.doc", "*.xlsx", "*.pdf" -Recurse -ErrorAction SilentlyContinue |`
+          ForEach-Object{
                 $file = $_.FullName
                 #Opens, reads, and searches .docx files
-                if($file -match '.docx' -or $file -match '.doc'){
-                    $word = New-Object -ComObject Word.application
-                    $document = $word.Documents.Open($file, $false, $true)
+                if($file -match "(\.docx)$" -or $file -match "(\.doc)$"){
+                  $wordDocs += $file
+                }
+                elseif($File -match "(\.xlsx)$"){
+                  $excelDocs += $file
+                }
+                elseif($file -match "(\.pdf)$"){
+                  $pdfDocs += $file
+                }
+                elseif($File -match "(\.txt)$"){
+                  $txtDocs += $file
+                }                      
+          }
+          if($wordDocs){
+            $word = New-Object -ComObject Word.application
+            foreach ($target in $wordDocs){
+              $document = $word.Documents.Open($target, $false, $true)
                     $content = $document.content.Text
                     foreach ($elem in $wordToSearch) 
                         { 
-                            if ($null -ne $content -and $content.ToUpper().Contains($elem))
-                            #if ($content.contains($elem)) 
+                            if ($null -ne $content -and $content.ToUpper().Contains($elem)) 
                             { 
                                 $result = New-Object psobject -Property @{
-                                    Location = $file
-                                    Type = $elem 
+                                    Location = $target
+                                    Type = $elem
+                                    Format = "Word" 
                                 } 
-                                $out += $result   
+                                #$out += $result
+                                $out = $out + $result   
                                 break                            
                             } 
                         }
-                    # if($document.content.Text.ToUpper.contains()){
-                    # $file
-                    # }
-                    $document.close()
-                    $word.Quit()
-                }
-                elseif($File -match '.xlsx'){
-                    $Excel = New-Object -ComObject Excel.Application
-                    $Workbook = $Excel.Workbooks.Open($File, $false, $true)
+                    $document.close($false)
+            }
+            $word.Quit()
+          }
+          if($excelDocs){
+            $Excel = New-Object -ComObject Excel.Application
+            foreach ($target in $excelDocs){
+              $Workbook = $Excel.Workbooks.Open($target, $false, $true)
                     for($i = 1; $i -lt $($Workbook.Sheets.Count() + 1); $i++){
                         $Range = $Workbook.Sheets.Item($i).Range("A:Z")
                         foreach ($elem in $wordToSearch) 
@@ -53,43 +71,70 @@ function Find-Folders {
                             if ($Range.Find($elem)) 
                             { 
                                 $result = New-Object psobject -Property @{
-                                    Location = $file
+                                    Location = $target
                                     Type = $elem 
+                                    Format = "Excel"
                                 } 
-                                $out += $result                               
+                                #$out += $result    
+                                $out = $out + $result                            
                             } 
                         }
-                        #$Target = $Range.Find("TeSt")
-                        # if($null -ne $Target){
-                        #     $File
-                        # }
                     }
-                    $Workbook.close()
-                    $Excel.Quit()
-                   }
-                #  elseif($file -match '.pdf'){
-                #     $document = $word.Documents.Open("D:\Test\PDFTest.pdf", $false, $true, $false,"" ,"", $false, "", "", 15)  
-                #  }
-                elseif($File -match '.txt'){
-                    $content = Get-Content $_.FullName
-                    foreach ($elem in $wordToSearch) 
-                        { 
-                            if ($null -ne $content -and $content.ToUpper().Contains($elem))
-                            #if ($content.contains($elem)) 
-                            { 
-                                $result = New-Object psobject -Property @{
-                                    Location = $file
-                                    Type = $elem 
-                                } 
-                                # $result = New-Object System.Object
-                                # $result = Add-Member NoteProperty -Name "Type" -Value ($elem)
-                                # $result = Add-Member NoteProperty -Name "Location" -Value ($file)
-                                $out += $result 
-                                break                              
-                            } 
-                        }
-                }                      
+                    $Workbook.close($false)
             }
+            $Excel.Quit()
+          }
+          if($pdfDocs){
+            $adobe = New-Object -ComObject AcroExch.App
+            foreach ($target in $pdfDocs){
+            $PDdoc = New-Object -ComObject AcroExch.PDDoc
+            $PDdoc.Open($target)
+            $AVdoc = $PDdoc.OpenAVDoc("")
+            foreach ($elem in $wordToSearch){
+              if ($AVDoc.FindText($elem, 0, 0, 1)){
+                  $result = New-Object psobject -Property @{
+                      Location = $target
+                      Type = $elem
+                      Format = "PDF"
+                  } 
+                  #$out += $result
+                  $out = $out + $result 
+                  break
+              }                  
+            }
+            $PDdoc.close()
+            }
+            $adobe.CloseAllDocs()
+            $adobe.exit()
+          }
+          if($txtDocs){
+            foreach ($target in $txtDocs){
+              try{
+              $content = Get-Content $target
+              foreach ($elem in $wordToSearch){ 
+                if ($null -ne $content -and $content.ToUpper().Contains($elem))
+                { 
+                    $result = New-Object psobject -Property @{
+                        Location = $target
+                        Type = $elem 
+                        Format = "TXT"
+                    } 
+                    #$out += $result 
+                    $out = $out + $result 
+                    break                              
+                } 
+              }
+              }
+              catch {
+                $result = New-Object psobject -Property @{
+                  Location = $target
+                  Type = "ERROR" 
+                  Format = "TXT"
+                }  
+                $out = $out + $result
+              }
+            }
+          }
         } else
         {
             $res = [System.Windows.Forms.MessageBox]::Show("You clicked Cancel. Would you like to try again or exit?", "Select a location", [System.Windows.Forms.MessageBoxButtons]::RetryCancel)
@@ -99,7 +144,11 @@ function Find-Folders {
                 return
             }
         }
-        $out | Format-Table
+        $out | Sort-Object -Property Location  | Format-Table -Property Type, Location
+        # $txtDocs         
+        # $wordDocs 
+        # $excelDocs 
+        # $pdfDocs
     }
     $browse.Dispose()
 } Find-Folders
