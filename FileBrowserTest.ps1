@@ -40,7 +40,7 @@ function Find-Folders {
           if($wordDocs){
             $word = New-Object -ComObject Word.application
             foreach ($target in $wordDocs){
-              $document = $word.Documents.Open($target, $false, $true)
+              $document = $word.Documents.Open($target, $false, $true, $false, "ttt")
                     $content = $document.content.Text
                     foreach ($elem in $wordToSearch) 
                         { 
@@ -125,7 +125,7 @@ function Find-Folders {
                 } 
               }
               }
-              catch {
+              catch [System.Management.Automation.ItemNotFoundException]{
                 $result = New-Object psobject -Property @{
                   Location = $target
                   Type = "ERROR" 
