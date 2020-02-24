@@ -1,4 +1,4 @@
-$wordToSearch = @("PASSPORT", "DEPENDENTS", "EFMP", "EXCEPTIONAL FAMILY MEMBER", "DEROS", "OUT OF CYCLE", "ATAAPS", "SOCIAL", "CARDS", "SPOUSE", "SIGNIFICANT OTHER", "DRIVERS LICENSE NUMBER", "OPR", "EPR", "SSN", "SSAN", "SOCIAL ROSTER", "RECALL ROSTER", "ALPHA ROSTER", "DOB", "DATE OF BIRTH", "BANK ROUTING NUMBER", "GAINS ROSTER", "LOSSES", "INSURANCE", "RATER", "RATEE", "UMPR", "REPORTS", "DD577", "AF910", "AF 910", "AF911", "AF 911", "AF912", "AF 912", "LEAVE", "AF707", "AF 707", "AF780", "AF 780", "ADDITIONAL DUTY")
+$wordToSearch = @("PASSPORT", "DEPENDENTS", "EFMP", "EXCEPTIONAL FAMILY MEMBER", "DEROS", "OUT OF CYCLE", "ATAAPS", "SOCIAL", "CARDS", "SPOUSE", "SIGNIFICANT OTHER", "DRIVERS LICENSE NUMBER", "OPR", "EPR", "SSN", "SSAN", "SOCIAL ROSTER", "RECALL ROSTER", "ALPHA ROSTER", "DOB", "DATE OF BIRTH", "BANK ROUTING NUMBER", "GAINS ROSTER", "LOSSES", "INSURANCE", "RATER", "RATEE", "UMPR", "REPORTS", "DD577", "AF910", "AF 910", "AF911", "AF 911", "AF912", "AF 912", "LEAVE", "AF707", "AF 707", "AF780", "AF 780", "ADDITIONAL DUTY", "TEST")
 $wordDocs = @()
 $excelDocs = @()
 $pdfDocs = @()
@@ -145,22 +145,25 @@ function Find-Folders {
           if($txtDocs){
             foreach ($target in $txtDocs){
               try{
-              $content = Get-Content $target
-              foreach ($elem in $wordToSearch){ 
-                if ($null -ne $content -and $content.ToUpper().Contains($elem))
-                { 
-                    $result = New-Object psobject -Property @{
-                        Location = $target
-                        Type = $elem 
-                        Format = "TXT"
-                    } 
-                    #$out += $result 
-                    $out = $out + $result 
-                    break                              
-                } 
+                if(test-path -path $target){
+                  $content = Get-Content $target
+                }
+                #$content = Get-Content $target
+                foreach ($elem in $wordToSearch){ 
+                  if ($null -ne $content -and $content.ToUpper().Contains($elem))
+                  { 
+                      $result = New-Object psobject -Property @{
+                          Location = $target
+                          Type = $elem 
+                          Format = "TXT"
+                      } 
+                      #$out += $result 
+                      $out = $out + $result 
+                      break                              
+                  } 
+                }
               }
-              }
-              catch [System.Management.Automation.ItemNotFoundException]{
+              catch [Microsoft.PowerShell.Commands.GetContentCommand]{
                 $result = New-Object psobject -Property @{
                   Location = $target
                   Type = "ERROR" 
@@ -179,7 +182,8 @@ function Find-Folders {
                 return
             }
         }
-        $out | Sort-Object -Property Location  | Format-Table -AutoSize -Property Type, Location
+        $fileOutput = $out | Sort-Object -Property directory  | Format-Table -AutoSize -Property Type, Location
+        Out-File -FilePath "$($env:USERPROFILE)\Documents\Output.txt" -InputObject $fileOutput 
     }
     $browse.Dispose()
 } Find-Folders
