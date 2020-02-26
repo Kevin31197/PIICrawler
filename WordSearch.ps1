@@ -20,7 +20,7 @@ function Find-Folders {
         $loop = $false
 		$directory = $browse.SelectedPath
 		#Script
-          Get-ChildItem  -Path $directory -Include "*.txt", "*.docx", "*.doc", "*.xlsx", "*.pdf" -Recurse -ErrorAction SilentlyContinue |`
+          Get-ChildItem  -Path $directory -Include "*.txt", "*.doc", "*.xlsx", "*.pdf" -Recurse -ErrorAction SilentlyContinue |`
           ForEach-Object{
                 $file = $_.FullName
                 #Seperates file locations into their respective array
@@ -72,7 +72,7 @@ function Find-Folders {
               $out = $out + $result          
               }
               $i = $i + 1
-              Write-Progress -Activity "Processing Word Documents" -Status "Progress:" -PercentComplete ($i/$wordDocs.count*100)
+              Write-Progress -Activity "Processing Word Documents" -Status "File $i of $($wordDocs.count)" -PercentComplete ($i/$wordDocs.count*100)
             }
             $word.Quit()
           }
@@ -82,7 +82,6 @@ function Find-Folders {
             $Excel = New-Object -ComObject Excel.Application
             foreach ($target in $excelDocs){
               try{
-
               $Workbook = $Excel.Workbooks.Open($target, $false, $true)
                     for($i = 1; $i -lt $($Workbook.Sheets.Count() + 1); $i++){
                         $Range = $Workbook.Sheets.Item($i).Range("A:Z")
@@ -111,7 +110,7 @@ function Find-Folders {
               $out = $out + $result
               }   
               $i = $i + 1
-              Write-Progress -Activity "Processing Word Documents" -Status "Progress:" -PercentComplete ($i/$excelDocs.count*100)  
+              Write-Progress -Activity "Processing Excel Documents" -Status "File $i of $($excelDocs.count)" -PercentComplete ($i/$excelDocs.count*100)  
             }
             $Excel.Quit()
           }
@@ -148,13 +147,13 @@ function Find-Folders {
               $adobe.CloseAllDocs()
               }
               $i = $i + 1
-              Write-Progress -Activity "Processing Word Documents" -Status "Progress:" -PercentComplete ($i/$pdfDocs.count*100)
+              Write-Progress -Activity "Processing PDF Documents" -Status "File $i of $($pdfDocs.count)" -PercentComplete ($i/$pdfDocs.count*100)
             }
             $adobe.CloseAllDocs()
             $adobe.exit()
           }
           if($txtDocs){
-            Write-Output "Total TXT Documents Found: $($txtDocs.count)"
+            Write-Output "Total Text Documents Found: $($txtDocs.count)"
             $i=0
             foreach ($target in $txtDocs){
               try{
@@ -185,7 +184,7 @@ function Find-Folders {
                 $out = $out + $result
               }
               $i = $i + 1
-              Write-Progress -Activity "Processing Word Documents" -Status "Progress:" -PercentComplete ($i/$txtDocs.count*100)
+              Write-Progress -Activity "Processing Text Documents" -Status "File $i of $($txtDocs.count)" -PercentComplete ($i/$txtDocs.count*100)
             }
           }
         } else
