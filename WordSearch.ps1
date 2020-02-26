@@ -20,28 +20,30 @@ function Find-Folders {
         $loop = $false
 		$directory = $browse.SelectedPath
 		#Script
-          Get-ChildItem  -Path $directory -Include "*.txt", "*.doc", "*.xlsx", "*.pdf" -Recurse -ErrorAction SilentlyContinue |`
+          Get-ChildItem  -Path $directory -Include "*.txt", "*.doc", "*.docx", "*.xlsx", "*.pdf" -Recurse -ErrorAction SilentlyContinue |`
           ForEach-Object{
-                $file = $_.FullName
-                #Seperates file locations into their respective array
-                if($file -match "(\.docx)$" -or $file -match "(\.doc)$"){
-                  $wordDocs += $file
-                }
-                elseif($File -match "(\.xlsx)$"){
-                  $excelDocs += $file
-                }
-                elseif($file -match "(\.pdf)$"){
-                  $pdfDocs += $file
-                }
-                elseif($File -match "(\.txt)$"){
-                  $txtDocs += $file
-                }                      
+            $file = $_.FullName
+            #Seperates file locations into their respective array
+            if($file -match "(\.docx)$" -or $file -match "(\.doc)$"){
+              $wordDocs += $file
+            }
+            elseif($File -match "(\.xlsx)$"){
+              $excelDocs += $file
+            }
+            elseif($file -match "(\.pdf)$"){
+              $pdfDocs += $file
+            }
+            elseif($File -match "(\.txt)$"){
+              $txtDocs += $file
+            }
+            Write-Progress -Activity "Searching for files..." -Status "$($_.FullName)"
           }
           #Searches files for a match from the word bank
           if($wordDocs){
             Write-Output "Total Word Documents Found: $($wordDocs.count)"
             $i=0
             $word = New-Object -ComObject Word.application
+            $word.WordBasic.DisableAutoMacros()
             foreach ($target in $wordDocs){
               try{
 
