@@ -1,4 +1,4 @@
-$wordToSearch = @("PASSPORT", "DEPENDENTS", "EFMP", "EXCEPTIONAL FAMILY MEMBER", "DEROS", "OUT OF CYCLE", "ATAAPS", "SOCIAL", "CARDS", "SPOUSE", "SIGNIFICANT OTHER", "DRIVERS LICENSE NUMBER", "OPR", "EPR", "SSN", "SSAN", "SOCIAL ROSTER", "RECALL ROSTER", "ALPHA ROSTER", "DOB", "DATE OF BIRTH", "BANK ROUTING NUMBER", "GAINS ROSTER", "LOSSES", "INSURANCE", "RATER", "RATEE", "UMPR", "REPORTS", "DD577", "AF910", "AF 910", "AF911", "AF 911", "AF912", "AF 912", "LEAVE", "AF707", "AF 707", "AF780", "AF 780", "ADDITIONAL DUTY", "TEST")
+$wordToSearch = @("PASSPORT", "DEPENDENTS", "EFMP", "EXCEPTIONAL FAMILY MEMBER", "DEROS", "OUT OF CYCLE", "ATAAPS", "SOCIAL", "CARDS", "SPOUSE", "SIGNIFICANT OTHER", "DRIVERS LICENSE NUMBER", "OPR", "EPR", "SSN", "SSAN", "SOCIAL ROSTER", "RECALL ROSTER", "ALPHA ROSTER", "DOB", "DATE OF BIRTH", "BANK ROUTING NUMBER", "GAINS ROSTER", "LOSSES", "INSURANCE", "RATER", "RATEE", "UMPR", "REPORTS", "DD577", "AF910", "AF 910", "AF911", "AF 911", "AF912", "AF 912", "LEAVE", "AF707", "AF 707", "AF780", "AF 780", "ADDITIONAL DUTY")
 $wordDocs = @()
 $excelDocs = @()
 $pdfDocs = @()
@@ -40,14 +40,15 @@ function Find-Folders {
           }
           #Searches files for a match from the word bank
           if($wordDocs){
-            Write-Output "Total Word Documents Found: $($wordDocs.count)"
+            Write-Output "`n`n`nTotal Word Documents Found: $($wordDocs.count)"
             $i=0
             $word = New-Object -ComObject Word.application
             $word.WordBasic.DisableAutoMacros()
+            $word.Application.AutomationSecurity = 2
             foreach ($target in $wordDocs){
               try{
 
-              $document = $word.Documents.Open($target, $false, $true, $false, "ttt")
+              $document = $word.Documents.Open($target, $false, $true, $false, "pass")
                     $content = $document.content.Text
                     foreach ($elem in $wordToSearch) 
                         { 
@@ -56,7 +57,6 @@ function Find-Folders {
                                 $result = New-Object psobject -Property @{
                                     Location = $target
                                     Type = $elem
-                                    Format = "Word" 
                                 } 
                                 #$out += $result
                                 $out = $out + $result   
@@ -69,7 +69,6 @@ function Find-Folders {
                 $result = New-Object psobject -Property @{
                   Location = $target
                   Type = $_.Exception.Message
-                  Format = "Word"
               }
               $out = $out + $result          
               }
@@ -84,7 +83,7 @@ function Find-Folders {
             $Excel = New-Object -ComObject Excel.Application
             foreach ($target in $excelDocs){
               try{
-              $Workbook = $Excel.Workbooks.Open($target, $false, $true)
+              $Workbook = $Excel.Workbooks.Open($target, $false, $true, 5, "pass")
                     for($i = 1; $i -lt $($Workbook.Sheets.Count() + 1); $i++){
                         $Range = $Workbook.Sheets.Item($i).Range("A:Z")
                         foreach ($elem in $wordToSearch) 
@@ -94,7 +93,6 @@ function Find-Folders {
                                 $result = New-Object psobject -Property @{
                                     Location = $target
                                     Type = $elem 
-                                    Format = "Excel"
                                 } 
                                 #$out += $result    
                                 $out = $out + $result                            
@@ -105,9 +103,8 @@ function Find-Folders {
               }
               catch [System.Runtime.InteropServices.COMException]{
                 $result = New-Object psobject -Property @{
-                  Location = $target
+                  Location = $targetgw
                   Type = $_.Exception.Message
-                  Format = "Excel"
               }
               $out = $out + $result
               }   
@@ -130,7 +127,6 @@ function Find-Folders {
                       $result = New-Object psobject -Property @{
                           Location = $target
                           Type = $elem
-                          Format = "PDF"
                       } 
                       $out = $out + $result 
                       break
@@ -142,7 +138,6 @@ function Find-Folders {
                 $result = New-Object psobject -Property @{
                   Location = $target
                   Type = $_.Exception.Message
-                  Format = "PDF"
               }
               $out = $out + $result
               $PDdoc.close()
@@ -169,7 +164,6 @@ function Find-Folders {
                       $result = New-Object psobject -Property @{
                           Location = $target
                           Type = $elem 
-                          Format = "TXT"
                       } 
                       #$out += $result 
                       $out = $out + $result 
@@ -181,7 +175,6 @@ function Find-Folders {
                 $result = New-Object psobject -Property @{
                   Location = $target
                   Type = "ERROR" 
-                  Format = "TXT"
                 }  
                 $out = $out + $result
               }
@@ -198,8 +191,8 @@ function Find-Folders {
                 return
             }
         }
-        $out | Sort-Object -Property directory  | Format-Table -AutoSize -Property Type, Location | Out-File "$($env:USERPROFILE)\Documents\Output.txt" -Width 300
-
+        #$out | Sort-Object -Property directory  | Format-Table -AutoSize -Property Type, Location | Out-File "$($env:USERPROFILE)\Documents\Output.txt" -Width 300
+        $out |Export-Csv "$($env:USERPROFILE)\Documents\Output.csv"  -NoTypeInformation
     }
     $browse.Dispose()
 } Find-Folders
